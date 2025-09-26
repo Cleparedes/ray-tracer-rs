@@ -1,6 +1,5 @@
 pub mod vec3 {
-    use std::fmt;
-    use std::fmt::{Display, Formatter};
+    use std::fmt::{self, Display, Formatter};
     use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
 
     #[derive(Clone, Default)]
