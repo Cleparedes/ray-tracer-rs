@@ -1,3 +1,4 @@
+use crate::interval::Interval;
 use crate::vec3::Vec3;
 use std::fs::File;
 use std::io::{Write, Result};
@@ -9,10 +10,12 @@ pub fn write_color(out: &mut File, pixel_color: &Color) -> Result<()> {
     let g: f64 = pixel_color.y();
     let b: f64 = pixel_color.z();
 
-    let red: i32 = (255.999 * r) as i32;
-    let green: i32 = (255.999 * g) as i32;
-    let blue: i32 = (255.999 * b) as i32;
+    // Scale color components
+    let intensity = Interval::new(0.0, 0.999);
+    let rbyte: i32 = (256 as f64 * intensity.clamp(r)) as i32;
+    let gbyte: i32 = (256 as f64 * intensity.clamp(g)) as i32;
+    let bbyte: i32 = (256 as f64 * intensity.clamp(b)) as i32;
 
-    writeln!(out, "{red} {green} {blue}")?;
+    writeln!(out, "{rbyte} {gbyte} {bbyte}")?;
     Ok(())
 }
