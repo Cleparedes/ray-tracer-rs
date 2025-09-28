@@ -38,7 +38,7 @@ impl Hittable for HittableList {
                 &mut temp_record) {
                 hit_anything = true;
                 closest_so_far = temp_record.time;
-                *record = temp_record;
+                *record = temp_record.clone();
             }
         }
 

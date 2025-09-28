@@ -37,6 +37,11 @@ impl Vec3 {
     pub fn length_squared(&self) -> f64 {
         self.x * self.x + self.y * self.y + self.z * self.z
     }
+
+    pub fn near_zero(&self) -> bool {
+        let epsilon: f64 = 1e-8;
+        f64::abs(self.x) < epsilon && f64::abs(self.y) < epsilon && f64::abs(self.z) < epsilon
+    }
 }
 
 // fmt
@@ -191,7 +196,10 @@ pub fn unit_vector(v: &Vec3) -> Vec3 {
 }
 
 pub fn random(interval_opt: Option<Interval>) -> Vec3 {
-    Vec3::new(random_double(interval_opt), random_double(interval_opt), random_double(interval_opt))
+    Vec3::new(
+        random_double(interval_opt), 
+        random_double(interval_opt), 
+        random_double(interval_opt))
 }
 
 pub fn random_unit_vector() -> Vec3 {
@@ -211,4 +219,8 @@ pub fn random_on_hemisphere(normal: &Vec3) -> Vec3 {
     } else {
         return -on_unit_sphere
     }
+}
+
+pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
+    *v - 2.0 * dot(v, n) * *n
 }

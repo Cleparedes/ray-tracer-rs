@@ -6,7 +6,7 @@ use crate::hittable::{HitRecord, Hittable};
 use crate::interval::Interval;
 use crate::ray::Ray;
 use crate::utilities::{random_double, INFINITY};
-use crate::vec3::{random_unit_vector, unit_vector, Point3, Vec3};
+use crate::vec3::{unit_vector, Point3, Vec3};
 
 pub struct Camera {
     pub aspect_ratio: f64,
@@ -95,8 +95,12 @@ impl Camera {
 
         let mut record  = HitRecord::default();
         if world.hit(ray, Interval::new(0.001, INFINITY), &mut record) {
-            let direction = record.normal + random_unit_vector();
-            return 0.5 * self.ray_color(&Ray::new(&record.point, &direction), depth - 1, world)
+            let mut scattered = Ray::default();
+            let mut attenuation = Color::default();
+            if record.material.scatter(ray, &record, &mut attenuation, &mut scattered) {
+                return attenuation * self.ray_color(&scattered, depth - 1, world)
+            }
+            return Color::default()
         }
 
         let unit_direction = unit_vector(ray.direction());
