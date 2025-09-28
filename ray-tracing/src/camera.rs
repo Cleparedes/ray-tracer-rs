@@ -1,17 +1,18 @@
+use std::fs::File;
+use std::io::{Write, Result};
+
 use crate::color::{write_color, Color};
 use crate::hittable::{HitRecord, Hittable};
 use crate::interval::Interval;
 use crate::ray::Ray;
 use crate::utilities::{random_double, INFINITY};
-use crate::vec3::{unit_vector, Point3, Vec3};
-use std::fs::File;
-use std::io::{Write, Result};
+use crate::vec3::{random_unit_vector, unit_vector, Point3, Vec3};
 
-#[derive(Default)]
 pub struct Camera {
     pub aspect_ratio: f64,
     pub image_width: i32,
     pub samples_per_pixel: i32,
+    pub max_depth: i32,
     image_height: i32,
     pixel_samples_scale: f64,
     center: Point3,
@@ -31,10 +32,10 @@ impl Camera {
         for j in 0..(self.image_height) {
             print!("\rScanlines remaining: {} ", (self.image_height - j));
             for i in 0..(self.image_width) {
-                let mut pixel_color: Color = Default::default();
+                let mut pixel_color = Color::default();
                 for _ in 0..self.samples_per_pixel {
                     let ray = self.get_ray(i, j);
-                    pixel_color += self.ray_color(&ray, world);
+                    pixel_color += self.ray_color(&ray, self.max_depth, world);
                 }
 
                 write_color(image, &(self.pixel_samples_scale * pixel_color))?;
@@ -49,7 +50,7 @@ impl Camera {
         self.image_height = ((self.image_width as f64) / self.aspect_ratio) as i32;
         self.image_height = if self.image_height < 1 { 1 } else { self.image_height };
         self.pixel_samples_scale = 1.0 / (self.samples_per_pixel as f64);
-        self.center = Default::default();
+        self.center = Point3::default();
 
         // Viewport dimensions
         let focal_length: f64 = 1.0;
@@ -87,14 +88,36 @@ impl Camera {
         Vec3::new(random_double(None) - 0.5, random_double(None) - 0.5, 0.0)
     }
 
-    fn ray_color(&self, ray: &Ray, world: &dyn Hittable) -> Color {
-        let mut record: HitRecord = Default::default();
-        if world.hit(ray, Interval::new(0.0, INFINITY), &mut record) {
-            return 0.5 * (record.normal + Color::new(1.0, 1.0, 1.0))
+    fn ray_color(&self, ray: &Ray, depth: i32, world: &dyn Hittable) -> Color {
+        if depth <= 0 {
+            return Color::default()
+        }
+
+        let mut record  = HitRecord::default();
+        if world.hit(ray, Interval::new(0.001, INFINITY), &mut record) {
+            let direction = record.normal + random_unit_vector();
+            return 0.5 * self.ray_color(&Ray::new(&record.point, &direction), depth - 1, world)
         }
 
         let unit_direction = unit_vector(ray.direction());
         let step = 0.5 * (unit_direction.y() + 1.0);
         (1.0 - step) * Color::new(1.0, 1.0, 1.0) + step * Color::new(0.5, 0.7, 1.0)
     }
+}
+
+impl Default for Camera {
+    fn default() -> Self {
+        Self { 
+            aspect_ratio: 1.0,
+            image_width: 100,
+            samples_per_pixel: 10,
+            max_depth: 10,
+            image_height: 100,
+            pixel_samples_scale: 0.1,
+            center: Point3::default(),
+            pixel00_loc: Point3::default(),
+            pixel_delta_u: Point3::default(),
+            pixel_delta_v: Point3::default(),
+        }
+    }    
 }

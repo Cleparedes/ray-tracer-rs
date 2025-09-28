@@ -1,6 +1,9 @@
 use std::fmt::{Display, Formatter, Result};
 use std::ops::{Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
 
+use crate::interval::Interval;
+use crate::utilities::random_double;
+
 #[derive(Clone, Copy, Default)]
 pub struct Vec3 {
     x: f64,
@@ -185,4 +188,27 @@ pub fn cross(v: &Vec3, u: &Vec3) -> Vec3 {
 
 pub fn unit_vector(v: &Vec3) -> Vec3 {
     *v / v.length()
+}
+
+pub fn random(interval_opt: Option<Interval>) -> Vec3 {
+    Vec3::new(random_double(interval_opt), random_double(interval_opt), random_double(interval_opt))
+}
+
+pub fn random_unit_vector() -> Vec3 {
+    loop {
+        let point: Point3 = random(Some(Interval::new(-1.0, 1.0)));
+        let len_sq: f64 = point.length_squared();
+        if 1e-160 < len_sq && len_sq <= 1.0 {
+            return point / f64::sqrt(len_sq)
+        }
+    }
+}
+
+pub fn random_on_hemisphere(normal: &Vec3) -> Vec3 {
+    let on_unit_sphere = random_unit_vector();
+    if dot(&on_unit_sphere, normal) > 0.0 {
+        return on_unit_sphere
+    } else {
+        return -on_unit_sphere
+    }
 }

@@ -1,7 +1,8 @@
+use std::vec::Vec;
+
 use crate::hittable::{HitRecord, Hittable};
 use crate::interval::{Interval};
 use crate::ray::Ray;
-use std::vec::Vec;
 
 #[derive(Default)]
 pub struct HittableList {
@@ -10,7 +11,7 @@ pub struct HittableList {
 
 impl HittableList {
     pub fn new(object: Box<dyn Hittable>) -> Self {
-        let mut list: HittableList = Default::default();
+        let mut list = HittableList::default();
         list.add(object);
         list
     }
@@ -26,7 +27,7 @@ impl HittableList {
 
 impl Hittable for HittableList {
     fn hit(&self, ray: &Ray, interval: Interval, record: &mut HitRecord) -> bool {
-        let mut temp_record: HitRecord = Default::default();
+        let mut temp_record = HitRecord::default();
         let mut hit_anything: bool = false;
         let mut closest_so_far: f64 = interval.max;
 

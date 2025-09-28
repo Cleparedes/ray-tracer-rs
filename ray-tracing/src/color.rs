@@ -1,14 +1,22 @@
-use crate::interval::Interval;
-use crate::vec3::Vec3;
 use std::fs::File;
 use std::io::{Write, Result};
 
+use crate::interval::Interval;
+use crate::vec3::Vec3;
+
 pub type Color = Vec3;
 
+pub fn linear_to_gamma(linear_component: f64) -> f64 {
+    if linear_component > 0.0 {
+        return f64::sqrt(linear_component)
+    }
+    0.0
+}
+
 pub fn write_color(out: &mut File, pixel_color: &Color) -> Result<()> {
-    let r: f64 = pixel_color.x();
-    let g: f64 = pixel_color.y();
-    let b: f64 = pixel_color.z();
+    let r: f64 = linear_to_gamma(pixel_color.x());
+    let g: f64 = linear_to_gamma(pixel_color.y());
+    let b: f64 = linear_to_gamma(pixel_color.z());
 
     // Scale color components
     let intensity = Interval::new(0.0, 0.999);
