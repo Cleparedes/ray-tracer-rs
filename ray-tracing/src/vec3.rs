@@ -213,7 +213,7 @@ pub fn random_unit_vector() -> Vec3 {
 }
 
 pub fn random_on_hemisphere(normal: &Vec3) -> Vec3 {
-    let on_unit_sphere = random_unit_vector();
+    let on_unit_sphere: Vec3 = random_unit_vector();
     if dot(&on_unit_sphere, normal) > 0.0 {
         return on_unit_sphere
     } else {
@@ -223,4 +223,12 @@ pub fn random_on_hemisphere(normal: &Vec3) -> Vec3 {
 
 pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
     *v - 2.0 * dot(v, n) * *n
+}
+
+pub fn refract(v: &Vec3, n: &Vec3, refraction_index: f64) -> Vec3 {
+    let cos_theta = f64::min(dot(&(-*v), n), 1.0);
+    let ray_out_perpendicular: Vec3 = refraction_index * (*v + cos_theta * *n);
+    let ray_out_parallel: Vec3 = 
+        -f64::sqrt(f64::abs(1.0 - ray_out_perpendicular.length_squared())) * *n;
+    ray_out_perpendicular + ray_out_parallel
 }

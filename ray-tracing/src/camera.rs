@@ -34,7 +34,7 @@ impl Camera {
             for i in 0..(self.image_width) {
                 let mut pixel_color = Color::default();
                 for _ in 0..self.samples_per_pixel {
-                    let ray = self.get_ray(i, j);
+                    let ray: Ray = self.get_ray(i, j);
                     pixel_color += self.ray_color(&ray, self.max_depth, world);
                 }
 
@@ -67,7 +67,7 @@ impl Camera {
         self.pixel_delta_v = viewport_v / (self.image_height as f64);
 
         // Pixel vector
-        let viewport_upper_left = 
+        let viewport_upper_left: Vec3 = 
             self.center - Vec3::new(0.0, 0.0, focal_length) - viewport_u / 2.0 
             - viewport_v / 2.0;
         self.pixel00_loc = 
@@ -75,12 +75,12 @@ impl Camera {
     }
 
     fn get_ray(&self, i: i32, j: i32) -> Ray {
-        let offset = self.sample_square();
-        let pixel_sample = 
+        let offset: Vec3 = self.sample_square();
+        let pixel_sample: Vec3 = 
             self.pixel00_loc + ((i as f64 + offset.x()) * self.pixel_delta_u) 
             + ((j as f64 + offset.y()) * self.pixel_delta_v);
-        let ray_origin = self.center;
-        let ray_direction = pixel_sample - ray_origin;
+        let ray_origin: Point3 = self.center;
+        let ray_direction: Vec3 = pixel_sample - ray_origin;
         Ray::new(&ray_origin, &ray_direction)
     }
 
@@ -103,8 +103,8 @@ impl Camera {
             return Color::default()
         }
 
-        let unit_direction = unit_vector(ray.direction());
-        let step = 0.5 * (unit_direction.y() + 1.0);
+        let unit_direction: Vec3 = unit_vector(ray.direction());
+        let step: f64 = 0.5 * (unit_direction.y() + 1.0);
         (1.0 - step) * Color::new(1.0, 1.0, 1.0) + step * Color::new(0.5, 0.7, 1.0)
     }
 }
