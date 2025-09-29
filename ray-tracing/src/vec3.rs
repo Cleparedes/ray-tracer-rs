@@ -199,7 +199,8 @@ pub fn random(interval_opt: Option<Interval>) -> Vec3 {
     Vec3::new(
         random_double(interval_opt), 
         random_double(interval_opt), 
-        random_double(interval_opt))
+        random_double(interval_opt),
+    )
 }
 
 pub fn random_unit_vector() -> Vec3 {
@@ -208,6 +209,19 @@ pub fn random_unit_vector() -> Vec3 {
         let len_sq: f64 = point.length_squared();
         if 1e-160 < len_sq && len_sq <= 1.0 {
             return point / f64::sqrt(len_sq)
+        }
+    }
+}
+
+pub fn random_in_unit_disk() -> Vec3 {
+    loop {
+        let point = Point3::new(
+            random_double(Some(Interval::new(-1.0, 1.0))),
+            random_double(Some(Interval::new(-1.0, 1.0))),
+            0.0,
+        );
+        if point.length_squared() < 1.0 {
+            return point
         }
     }
 }
