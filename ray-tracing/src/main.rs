@@ -9,6 +9,7 @@ pub mod sphere;
 pub mod utilities;
 pub mod vec3;
 
+use indicatif::{ProgressBar, ProgressStyle};
 use std::fs::{create_dir_all, File};
 use std::io::Result;
 
@@ -34,8 +35,14 @@ fn main() -> Result<()> {
         Box::new(Sphere::new(&Point3::new(0.0, -1000.0, 0.0), 1000.0, material_ground))
     );
 
+    let bar = ProgressBar::new(484);
+    bar.set_message("Generating objects...");
+    bar.set_style(ProgressStyle::with_template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
+        .unwrap()
+        .progress_chars("=> "));
     for a in -11..11 {
         for b in -11..11 {
+            bar.inc(1);
             let choose_material: f64 = random_double(None);
             let center = Point3::new(
                 a as f64 + 0.9 * random_double(None), 
@@ -70,8 +77,11 @@ fn main() -> Result<()> {
     let diffuse_material = Box::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
     world.add(Box::new(Sphere::new(&Point3::new(-4.0, 1.0, 0.0), 1.0, diffuse_material)));
 
-    let metal_material = Box::new(Metal::new(Color::new(0.8, 0.6, 0.2), 1.0));
+    let metal_material = Box::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
     world.add(Box::new(Sphere::new(&Point3::new(4.0, 1.0, 0.0), 1.0, metal_material)));
+    
+    bar.set_message("Generating objects: Done.");
+    bar.finish();
     
     //Render
     let mut camera = Camera::default();

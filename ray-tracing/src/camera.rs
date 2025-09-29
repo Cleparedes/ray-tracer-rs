@@ -1,3 +1,4 @@
+use indicatif::{ProgressBar, ProgressStyle};
 use std::fs::File;
 use std::io::{Write, Result};
 
@@ -40,8 +41,13 @@ impl Camera {
         writeln!(image, "{} {}", self.image_width, self.image_height)?;
         writeln!(image, "255")?;
 
+        let bar = ProgressBar::new(self.image_height as u64);
+        bar.set_message("Rendering...");
+        bar.set_style(ProgressStyle::with_template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
+            .unwrap()
+            .progress_chars("=> "));
         for j in 0..(self.image_height) {
-            print!("\rScanlines remaining: {} ", (self.image_height - j));
+            bar.inc(1);
             for i in 0..(self.image_width) {
                 let mut pixel_color = Color::default();
                 for _ in 0..self.samples_per_pixel {
@@ -53,7 +59,8 @@ impl Camera {
             }
         }
 
-        println!("\rDone.                 ");
+        bar.set_message("Rendering: Done.");
+        bar.finish();
         Ok(())
     }
 
