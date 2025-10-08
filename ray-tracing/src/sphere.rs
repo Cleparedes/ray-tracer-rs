@@ -5,15 +5,19 @@ use crate::ray::Ray;
 use crate::vec3::{dot, Point3, Vec3};
 
 pub struct Sphere {
-    center: Point3,
+    center: Ray,
     radius: f64,
     material: Box<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: &Point3, radius: f64, material: Box<dyn Material>) -> Self {
+    pub fn new(center: &Point3, center2: Option<&Point3>, radius: f64, material: Box<dyn Material>) -> Self {
+        let direction: Vec3 = match center2 {
+            Some(point) => *point - *center,
+            None => Vec3::default(),
+        };
         Self {
-            center: *center,
+            center: Ray::new(center, &direction, None),
             radius: f64::max(0.0, radius),
             material,
         }
@@ -22,10 +26,11 @@ impl Sphere {
 
 impl Hittable for Sphere {
     fn hit(&self, ray: &Ray, interval: Interval, record: &mut HitRecord) -> bool {
-        let origin: Point3 = self.center - *ray.origin();
+        let current_center: Point3 = self.center.at(ray.time());
+        let origin_center: Vec3 = current_center - *ray.origin();
         let a: f64 = ray.direction().length_squared();
-        let h: f64 = dot(ray.direction(), &origin);
-        let c: f64 = dot(&origin, &origin) - self.radius * self.radius;
+        let h: f64 = dot(ray.direction(), &origin_center);
+        let c: f64 = origin_center.length_squared() - self.radius * self.radius;
         let discriminant: f64 = h * h - a * c;
         if discriminant < 0.0 {
             return false
@@ -43,7 +48,7 @@ impl Hittable for Sphere {
 
         record.time = root;
         record.point = ray.at(record.time);
-        let outward_normal: Vec3 = (record.point - self.center) / self.radius;
+        let outward_normal: Vec3 = (record.point - current_center) / self.radius;
         record.set_face_normal(ray, &outward_normal);
         record.material = self.material.clone();
 

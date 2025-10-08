@@ -43,9 +43,9 @@ impl Camera {
 
         let bar = ProgressBar::new(self.image_height as u64);
         bar.set_message("Rendering...");
-        bar.set_style(ProgressStyle::with_template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
+        bar.set_style(ProgressStyle::with_template("[{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
             .unwrap()
-            .progress_chars("=> "));
+            .progress_chars("#>-"));
         for j in 0..(self.image_height) {
             bar.inc(1);
             for i in 0..(self.image_width) {
@@ -115,7 +115,8 @@ impl Camera {
                 self.defocus_disk_sample()
             };
         let ray_direction: Vec3 = pixel_sample - ray_origin;
-        Ray::new(&ray_origin, &ray_direction)
+        let ray_time: f64 = random_double(None);
+        Ray::new(&ray_origin, &ray_direction, Some(ray_time))
     }
 
     fn sample_square(&self) -> Vec3 {
