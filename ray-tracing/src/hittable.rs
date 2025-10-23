@@ -10,16 +10,27 @@ pub struct HitRecord {
     pub normal: Vec3,
     pub material: Box<dyn Material>,
     pub time: f64,
+    pub u: f64,
+    pub v: f64,
     pub front_face: bool,
 }
 
 impl HitRecord {
-    pub fn new(point: &Point3, normal: &Vec3, material: Box<dyn Material>, time: f64, front_face: bool) -> Self {
+    pub fn new(
+        point: &Point3, 
+        normal: &Vec3, 
+        material: Box<dyn Material>, 
+        time: f64, 
+        u: f64, v: f64, 
+        front_face: bool) -> Self {
+
         Self {
             point: *point,
             normal: *normal,
             material: material,
             time,
+            u,
+            v,
             front_face,
         }
     }
@@ -40,6 +51,8 @@ impl Default for HitRecord {
             point: Point3::default(),
             normal: Vec3::default(),
             material: Box::new(Lambertian::default()),
+            u: 0.0,
+            v: 0.0,
             time: 0.0,
             front_face: false,
         }

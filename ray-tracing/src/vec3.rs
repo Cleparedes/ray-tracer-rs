@@ -31,7 +31,7 @@ impl Vec3 {
     }
 
     pub fn length(&self) -> f64 {
-        f64::sqrt(self.length_squared())
+        self.length_squared().sqrt()
     }
 
     pub fn length_squared(&self) -> f64 {
@@ -40,7 +40,9 @@ impl Vec3 {
 
     pub fn near_zero(&self) -> bool {
         let epsilon: f64 = 1e-8;
-        f64::abs(self.x) < epsilon && f64::abs(self.y) < epsilon && f64::abs(self.z) < epsilon
+        self.x.abs() < epsilon 
+        && self.y.abs() < epsilon 
+        && self.z.abs() < epsilon
     }
 }
 
@@ -208,7 +210,7 @@ pub fn random_unit_vector() -> Vec3 {
         let point: Point3 = random(Some(Interval::new(-1.0, 1.0)));
         let len_sq: f64 = point.length_squared();
         if 1e-160 < len_sq && len_sq <= 1.0 {
-            return point / f64::sqrt(len_sq)
+            return point / len_sq.sqrt()
         }
     }
 }
@@ -240,9 +242,8 @@ pub fn reflect(v: &Vec3, n: &Vec3) -> Vec3 {
 }
 
 pub fn refract(v: &Vec3, n: &Vec3, refraction_index: f64) -> Vec3 {
-    let cos_theta = f64::min(dot(&(-*v), n), 1.0);
+    let cos_theta: f64 = dot(&(-*v), n).min(1.0);
     let ray_out_perpendicular: Vec3 = refraction_index * (*v + cos_theta * *n);
-    let ray_out_parallel: Vec3 = 
-        -f64::sqrt(f64::abs(1.0 - ray_out_perpendicular.length_squared())) * *n;
+    let ray_out_parallel: Vec3 = - (1.0 - ray_out_perpendicular.length_squared()).abs().sqrt() * *n;
     ray_out_perpendicular + ray_out_parallel
 }

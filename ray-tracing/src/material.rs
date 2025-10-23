@@ -1,14 +1,13 @@
 use crate::color::Color;
 use crate::hittable::HitRecord;
 use crate::ray::Ray;
+use crate::texture::{SolidColor, Texture};
 use crate::utilities::random_double;
 use crate::vec3::{dot, random_unit_vector, reflect, refract, unit_vector, Vec3};
 
 pub trait Material {
     fn clone_box(&self) -> Box<dyn Material>;
-
-    fn scatter(&self, ray_in: &Ray, record: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) 
-        -> bool;
+    fn scatter(&self, ray_in: &Ray, record: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool;
 }
 
 impl Clone for Box<dyn Material> {
@@ -17,22 +16,34 @@ impl Clone for Box<dyn Material> {
     }    
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone)]
 pub struct Lambertian {
-    albedo: Color,
+    texture: Box<dyn Texture>,
 }
 
 impl Lambertian {
-    pub fn new(albedo: Color) -> Self {
+    pub fn new(albedo: &Color) -> Self {
+        Self::new_from_texture(Box::new(SolidColor::new_from_color(albedo)))
+    }
+
+    pub fn new_from_texture(texture: Box<dyn Texture>) -> Self {
+        Self {
+            texture
+        }
+    }
+}
+
+impl Default for Lambertian {
+    fn default() -> Self {
         Self { 
-            albedo 
+            texture: Box::new(SolidColor::default()),
         }
     }
 }
 
 impl Material for Lambertian {
     fn clone_box(&self) -> Box<dyn Material> {
-        Box::new(*self)
+        Box::new(self.clone())
     }
 
     fn scatter(&self, ray_in: &Ray, record: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) 
@@ -42,7 +53,7 @@ impl Material for Lambertian {
             scatter_direction = record.normal
         }
         *scattered = Ray::new(&record.point, &scatter_direction, Some(ray_in.time()));
-        *attenuation = self.albedo;
+        *attenuation = self.texture.value(record.u, record.v, &record.point);
         true
     }
 }
@@ -57,7 +68,7 @@ impl Metal {
     pub fn new(albedo: Color, fuzz: f64) -> Self {
         Self { 
             albedo,
-            fuzz: f64::min(fuzz, 1.0),
+            fuzz: fuzz.min(1.0),
         }
     }
 }
@@ -93,7 +104,7 @@ impl Dielectric {
     fn reflectance(&self, cosine: f64, refraction_index: f64) -> f64 {
         let mut r0: f64 = (1.0 - refraction_index) / (1.0 + refraction_index);
         r0 *= r0;
-        r0 + (1.0 - r0) * f64::powi(1.0 - cosine, 5)
+        r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
     }
 }
 
@@ -108,9 +119,8 @@ impl Material for Dielectric {
         let refraction_index: f64 = if record.front_face { 1.0 / self.refraction_index }
             else { self.refraction_index };
         let unit_direction: Vec3 = unit_vector(ray_in.direction());
-        let cos_theta = 
-            f64::min(dot(&(-unit_direction), &record.normal), 1.0);
-        let sin_theta = f64::sqrt(1.0 - cos_theta * cos_theta);
+        let cos_theta: f64 = dot(&(-unit_direction), &record.normal).min(1.0);
+        let sin_theta: f64 = (1.0 - cos_theta * cos_theta).sqrt();
         let cannot_refract: bool = refraction_index * sin_theta > 1.0;
         let direction: Vec3 = 
             if cannot_refract || self.reflectance(cos_theta, refraction_index) > random_double(None) { 

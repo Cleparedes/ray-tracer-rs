@@ -3,6 +3,7 @@ use crate::hittable::{HitRecord, Hittable};
 use crate::interval::Interval;
 use crate::material::Material;
 use crate::ray::Ray;
+use crate::utilities::PI;
 use crate::vec3::{dot, Point3, Vec3};
 
 #[derive(Clone)]
@@ -20,7 +21,7 @@ impl Sphere {
             None => Vec3::default(),
         };
         let center_ray = Ray::new(center, &direction, None);
-        let rad = f64::max(0.0, radius);
+        let rad = radius.max(0.0);
         let rvec = Vec3::new(rad, rad, rad);
         let box1 = AABB::new_from_points(&(center_ray.at(0.0) - rvec), &(center_ray.at(0.0) + rvec));
         let box2 = AABB::new_from_points(&(center_ray.at(1.0) - rvec), &(center_ray.at(1.0) + rvec));
@@ -30,6 +31,13 @@ impl Sphere {
             material,
             bbox: AABB::new_from_children(&box1, &box2),
         }
+    }
+
+    pub(crate) fn get_sphere_uv(&self, p: &Point3, u: &mut f64, v: &mut f64) -> () {
+        let theta: f64 = (-p.y()).acos();
+        let phi: f64 = (-p.z()).atan2(p.x()) + PI;
+        *u = phi / (2.0 * PI);
+        *v = theta / PI;
     }
 }
 
@@ -46,7 +54,7 @@ impl Hittable for Sphere {
         }
 
         // Nearest root in range
-        let sqrt_discriminant: f64 = f64::sqrt(discriminant);
+        let sqrt_discriminant: f64 = discriminant.sqrt();
         let mut root: f64 = (h - sqrt_discriminant) / a;
         if !interval.surrounds(root) {
             root = (h + sqrt_discriminant) / a;
@@ -59,6 +67,7 @@ impl Hittable for Sphere {
         record.point = ray.at(record.time);
         let outward_normal: Vec3 = (record.point - current_center) / self.radius;
         record.set_face_normal(ray, &outward_normal);
+        self.get_sphere_uv(&outward_normal, &mut record.u, &mut record.v);
         record.material = self.material.clone();
 
         true

@@ -23,9 +23,9 @@ impl AABB {
 
     pub fn new_from_points(a: &Point3, b: &Point3) -> Self {
         Self { 
-            x: Interval::new(f64::min(a.x(), b.x()), f64::max(a.x(), b.x())), 
-            y: Interval::new(f64::min(a.y(), b.y()), f64::max(a.y(), b.y())), 
-            z: Interval::new(f64::min(a.z(), b.z()), f64::max(a.z(), b.z())), 
+            x: Interval::new(a.x().min(b.x()), a.x().max(b.x())), 
+            y: Interval::new(a.y().min(b.y()), a.y().max(b.y())), 
+            z: Interval::new(a.z().min(b.z()), a.z().max(b.z())), 
         }
     }
 

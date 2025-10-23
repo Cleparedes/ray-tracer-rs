@@ -8,7 +8,7 @@ pub type Color = Vec3;
 
 pub fn linear_to_gamma(linear_component: f64) -> f64 {
     if linear_component > 0.0 {
-        return f64::sqrt(linear_component)
+        return linear_component.sqrt()
     }
     0.0
 }

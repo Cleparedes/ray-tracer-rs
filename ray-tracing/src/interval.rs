@@ -15,8 +15,8 @@ impl Interval {
 
     pub fn new_from_children(a: &Interval, b: &Interval) -> Self {
         Self {
-            min: f64::min(a.min, b.min),
-            max: f64::max(a.max, b.max),
+            min: a.min.min(b.min),
+            max: a.max.max(b.max),
         }
     }
 

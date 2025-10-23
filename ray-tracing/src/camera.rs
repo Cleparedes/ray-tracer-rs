@@ -72,7 +72,7 @@ impl Camera {
 
         // Viewport dimensions
         let theta: f64 = degrees_to_radians(self.vertical_view_angle);
-        let h = f64::tan(theta / 2.0);
+        let h: f64 = (theta / 2.0).tan();
         let viewport_height: f64 = 2.0 * h * self.focus_distance;
         let viewport_width: f64 = 
             viewport_height * ((self.image_width as f64) / (self.image_height as f64));
@@ -97,8 +97,7 @@ impl Camera {
             viewport_upper_left + 0.5 * (self.pixel_delta_u + self.pixel_delta_v);
 
         // Defocus disk basis vectors
-        let defocus_radius = 
-            self.focus_distance * f64::tan(degrees_to_radians(self.defocus_angle / 2.0));
+        let defocus_radius: f64 = self.focus_distance * degrees_to_radians(self.defocus_angle / 2.0).tan();
         self.defocus_disk_u = self.u * defocus_radius;
         self.defocus_disk_v = self.v * defocus_radius;
     }
