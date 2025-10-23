@@ -126,10 +126,13 @@ impl RTWImage {
         if self.bdata.is_empty() {
             return 0
         }
+        let x: i32 = self.clamp(x, 0, self.image_width);
+        let y: i32 = self.clamp(y, 0, self.image_height);
+
         return (y * self.bytes_per_scanline + x * self.bytes_per_pixel) as usize;
     }
 
-    fn clamp(x: i32, low: i32, high: i32) -> i32 {
+    fn clamp(&self, x: i32, low: i32, high: i32) -> i32 {
         if x < low {
             return low
         }

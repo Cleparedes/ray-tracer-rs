@@ -104,7 +104,7 @@ impl Texture for ImageTexture {
 
     fn value(&self, u: f64, v: f64, _p: &Point3) -> Color {
         if self.image.height() <= 0 {
-            return Color::new(0.0, 1.0, 1.0)
+            return Color::new(1.0, 0.0, 1.0)
         }
         let u: f64 = Interval::new(0.0, 1.0).clamp(u);
         let v: f64 = 1.0 - Interval::new(0.0, 1.0).clamp(v);
