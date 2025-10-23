@@ -15,3 +15,7 @@ pub fn random_double(interval_opt: Option<Interval>) -> f64 {
         Some(interval) => interval.min + (interval.max - interval.min) * random_double(None),
     }
 }
+
+pub fn random_int(min: i32, max: i32) -> i32 {
+    random_double(Some(Interval::new(min as f64, max as f64))) as i32
+}

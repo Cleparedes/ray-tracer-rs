@@ -134,7 +134,7 @@ impl Camera {
         }
 
         let mut record  = HitRecord::default();
-        if world.hit(ray, Interval::new(0.001, INFINITY), &mut record) {
+        if world.hit(ray, &Interval::new(0.001, INFINITY), &mut record) {
             let mut scattered = Ray::default();
             let mut attenuation = Color::default();
             if record.material.scatter(ray, &record, &mut attenuation, &mut scattered) {

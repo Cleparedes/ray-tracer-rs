@@ -1,3 +1,5 @@
+pub mod aabb;
+pub mod bvh;
 pub mod camera;
 pub mod color;
 pub mod hittable;
@@ -13,6 +15,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use std::fs::{create_dir_all, File};
 use std::io::Result;
 
+use crate::bvh::BVHNode;
 use crate::camera::Camera;
 use crate::color::Color;
 use crate::hittable_list::HittableList;
@@ -35,11 +38,12 @@ fn main() -> Result<()> {
         Box::new(Sphere::new(&Point3::new(0.0, -1000.0, 0.0), None, 1000.0, material_ground))
     );
 
-    let bar = ProgressBar::new(484);
+    let bar = ProgressBar::new(485);
     bar.set_message("Generating objects...");
     bar.set_style(ProgressStyle::with_template("[{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
         .unwrap()
         .progress_chars("#>-"));
+
     for a in -11..11 {
         for b in -11..11 {
             bar.inc(1);
@@ -85,6 +89,8 @@ fn main() -> Result<()> {
     let metal_material = Box::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
     world.add(Box::new(Sphere::new(&Point3::new(4.0, 1.0, 0.0), None, 1.0, metal_material)));
     
+    world = HittableList::new(Box::new(BVHNode::new_from_hittable_list(&mut world)));
+
     bar.set_message("Generating objects: Done.");
     bar.finish();
     

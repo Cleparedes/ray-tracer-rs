@@ -1,13 +1,16 @@
+use crate::aabb::AABB;
 use crate::hittable::{HitRecord, Hittable};
 use crate::interval::Interval;
 use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec3::{dot, Point3, Vec3};
 
+#[derive(Clone)]
 pub struct Sphere {
     center: Ray,
     radius: f64,
     material: Box<dyn Material>,
+    bbox: AABB
 }
 
 impl Sphere {
@@ -16,16 +19,22 @@ impl Sphere {
             Some(point) => *point - *center,
             None => Vec3::default(),
         };
+        let center_ray = Ray::new(center, &direction, None);
+        let rad = f64::max(0.0, radius);
+        let rvec = Vec3::new(rad, rad, rad);
+        let box1 = AABB::new_from_points(&(center_ray.at(0.0) - rvec), &(center_ray.at(0.0) + rvec));
+        let box2 = AABB::new_from_points(&(center_ray.at(1.0) - rvec), &(center_ray.at(1.0) + rvec));
         Self {
-            center: Ray::new(center, &direction, None),
-            radius: f64::max(0.0, radius),
+            center: center_ray,
+            radius: rad,
             material,
+            bbox: AABB::new_from_children(&box1, &box2),
         }
     }
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, ray: &Ray, interval: Interval, record: &mut HitRecord) -> bool {
+    fn hit(&self, ray: &Ray, interval: &Interval, record: &mut HitRecord) -> bool {
         let current_center: Point3 = self.center.at(ray.time());
         let origin_center: Vec3 = current_center - *ray.origin();
         let a: f64 = ray.direction().length_squared();
@@ -53,5 +62,13 @@ impl Hittable for Sphere {
         record.material = self.material.clone();
 
         true
+    }
+
+    fn bounding_box(&self) -> AABB {
+        self.bbox
+    }
+
+    fn box_clone(&self) -> Box<dyn Hittable> {
+        Box::new(self.clone())
     }
 }

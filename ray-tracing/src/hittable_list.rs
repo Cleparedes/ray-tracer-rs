@@ -1,12 +1,14 @@
 use std::vec::Vec;
 
+use crate::aabb::AABB;
 use crate::hittable::{HitRecord, Hittable};
 use crate::interval::{Interval};
 use crate::ray::Ray;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct HittableList {
     pub objects: Vec<Box<dyn Hittable>>,
+    bbox: AABB,
 }
 
 impl HittableList {
@@ -21,12 +23,13 @@ impl HittableList {
     }
 
     pub fn add(&mut self, object: Box<dyn Hittable>) -> () {
+        self.bbox = AABB::new_from_children(&self.bbox, &object.bounding_box());
         self.objects.push(object);
     }
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, ray: &Ray, interval: Interval, record: &mut HitRecord) -> bool {
+    fn hit(&self, ray: &Ray, interval: &Interval, record: &mut HitRecord) -> bool {
         let mut temp_record = HitRecord::default();
         let mut hit_anything: bool = false;
         let mut closest_so_far: f64 = interval.max;
@@ -34,8 +37,9 @@ impl Hittable for HittableList {
         for object in &self.objects {
             if object.hit(
                 ray, 
-                Interval::new(interval.min, closest_so_far), 
-                &mut temp_record) {
+                &Interval::new(interval.min, closest_so_far), 
+                &mut temp_record) 
+            {
                 hit_anything = true;
                 closest_so_far = temp_record.time;
                 *record = temp_record.clone();
@@ -43,5 +47,13 @@ impl Hittable for HittableList {
         }
 
         hit_anything
+    }
+
+    fn bounding_box(&self) -> AABB {
+        self.bbox
+    }
+
+    fn box_clone(&self) -> Box<dyn Hittable> {
+        Box::new(self.clone())
     }
 }

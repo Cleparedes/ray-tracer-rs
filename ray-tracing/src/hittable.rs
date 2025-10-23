@@ -1,3 +1,4 @@
+use crate::aabb::AABB;
 use crate::interval::Interval;
 use crate::material::{Lambertian, Material};
 use crate::ray::Ray;
@@ -46,5 +47,13 @@ impl Default for HitRecord {
 }
 
 pub trait Hittable {
-    fn hit(&self, ray: &Ray, interval: Interval, record: &mut HitRecord) -> bool;
+    fn hit(&self, ray: &Ray, interval: &Interval, record: &mut HitRecord) -> bool;
+    fn bounding_box(&self) -> AABB;
+    fn box_clone(&self) -> Box<dyn Hittable>;
+}
+
+impl Clone for Box<dyn Hittable> {
+    fn clone(&self) -> Self {
+        self.box_clone()
+    }
 }
