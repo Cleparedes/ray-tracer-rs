@@ -1,5 +1,6 @@
 use crate::color::Color;
 use crate::interval::Interval;
+use crate::perlin::Perlin;
 use crate::rtw_image::RTWImage;
 use crate::vec3::Point3;
 
@@ -117,5 +118,31 @@ impl Texture for ImageTexture {
             color_scale * self.image[pixel + 1] as f64, 
             color_scale * self.image[pixel + 2] as f64
         )
+    }
+}
+
+#[derive(Clone)]
+pub struct NoiseTexture {
+    noise: Perlin,
+    scale: f64,
+}
+
+impl NoiseTexture {
+    pub fn new(scale: f64) -> Self {
+        Self {
+            noise: Perlin::new(),
+            scale,
+        }
+    }
+}
+
+impl Texture for NoiseTexture {
+    fn clone_box(&self) -> Box<dyn Texture> {
+        Box::new(self.clone())
+    }
+
+    fn value(&self, _u: f64, _v: f64, p: &Point3) -> Color {
+        Color::new(0.5, 0.5, 0.5) 
+            * (1.0 + (self.scale * p.z() + 10.0 * self.noise.turb(p, 7)).sin())
     }
 }

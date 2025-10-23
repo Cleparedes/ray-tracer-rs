@@ -6,6 +6,7 @@ pub mod hittable;
 pub mod hittable_list;
 pub mod interval;
 pub mod material;
+pub mod perlin;
 pub mod ray;
 pub mod rtw_image;
 pub mod sphere;
@@ -24,7 +25,7 @@ use crate::hittable_list::HittableList;
 use crate::interval::Interval;
 use crate::material::{Dielectric, Lambertian, Metal};
 use crate::sphere::Sphere;
-use crate::texture::{CheckerTexture, ImageTexture};
+use crate::texture::{CheckerTexture, ImageTexture, NoiseTexture};
 use crate::utilities::random_double;
 use crate::vec3::{random, Point3, Vec3};
 
@@ -187,12 +188,51 @@ fn earth() -> Result<()> {
     Ok(())
 }
 
+fn perlin_spheres() -> Result<()> {
+    // Output
+    let mut image = File::create("./output/perlin_spheres.ppm")?;
+
+    let bar = ProgressBar::new(2);
+    bar.set_message("Generating objects...");
+    bar.set_style(ProgressStyle::with_template("[{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
+        .unwrap()
+        .progress_chars("#>-"));
+
+    // World
+    let mut world = HittableList::default();
+
+    let pertext = NoiseTexture::new(4.0);
+    let pertext_material = Box::new(Lambertian::new_from_texture(Box::new(pertext)));
+    world.add(Box::new(Sphere::new(&Point3::new(0.0, -1000.0, 0.0), None, 1000.0, pertext_material.clone())));
+    world.add(Box::new(Sphere::new(&Point3::new(0.0, 2.0, 0.0), None, 2.0, pertext_material.clone())));
+
+    bar.set_message("Generating objects: Done.");
+    bar.finish();
+    
+    //Render
+    let mut camera = Camera::default();
+    camera.aspect_ratio = 16.0 / 9.0;
+    camera.image_width = 400;
+    camera.samples_per_pixel = 100;
+    camera.max_depth = 50;
+    camera.vertical_view_angle = 20.0;
+    camera.look_from = Point3::new(13.0, 2.0, 3.0);
+    camera.look_at = Point3::default();
+    camera.view_up = Vec3::new(0.0, 1.0, 0.0);
+    camera.defocus_angle = 0.0;
+    camera.render(&mut world, &mut image)?;
+
+    Ok(())
+}
+
+
 fn main() -> Result<()> {
     let _ = create_dir_all("./output/")?;
 
-    match 3 {
+    match 4 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
-        _ => earth(),
+        3 => earth(),
+        _ => perlin_spheres(),
     }
 }
