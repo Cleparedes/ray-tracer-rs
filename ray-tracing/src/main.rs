@@ -7,6 +7,7 @@ pub mod hittable_list;
 pub mod interval;
 pub mod material;
 pub mod perlin;
+pub mod quad;
 pub mod ray;
 pub mod rtw_image;
 pub mod sphere;
@@ -24,6 +25,7 @@ use crate::color::Color;
 use crate::hittable_list::HittableList;
 use crate::interval::Interval;
 use crate::material::{Dielectric, Lambertian, Metal};
+use crate::quad::Quad;
 use crate::sphere::Sphere;
 use crate::texture::{CheckerTexture, ImageTexture, NoiseTexture};
 use crate::utilities::random_double;
@@ -225,14 +227,60 @@ fn perlin_spheres() -> Result<()> {
     Ok(())
 }
 
+fn quads() -> Result<()> {
+    // Output
+    let mut image = File::create("./output/quads.ppm")?;
+
+    let bar = ProgressBar::new(5);
+    bar.set_message("Generating objects...");
+    bar.set_style(ProgressStyle::with_template("[{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
+        .unwrap()
+        .progress_chars("#>-"));
+
+    // World
+    let mut world = HittableList::default();
+
+    // Materials
+    let left_red = Box::new(Lambertian::new(&Color::new(1.0, 0.2, 0.2)));
+    let back_green = Box::new(Lambertian::new(&Color::new(0.2, 1.0, 0.2)));
+    let right_blue = Box::new(Lambertian::new(&Color::new(0.2, 0.2, 1.0)));
+    let upper_orange = Box::new(Lambertian::new(&Color::new(1.0, 0.5, 0.0)));
+    let lower_teal = Box::new(Lambertian::new(&Color::new(0.2, 0.8, 0.8)));
+
+    // Quadrilaterals
+    world.add(Box::new(Quad::new(&Point3::new(-3.0, -2.0, 5.0), &Vec3::new(0.0, 0.0, -4.0), &Vec3::new(0.0, 4.0, 0.0), left_red)));
+    world.add(Box::new(Quad::new(&Point3::new(-2.0, -2.0, 0.0), &Vec3::new(4.0, 0.0, 0.0), &Vec3::new(0.0, 4.0, 0.0), back_green)));
+    world.add(Box::new(Quad::new(&Point3::new(3.0, -2.0, 1.0), &Vec3::new(0.0, 0.0, 4.0), &Vec3::new(0.0, 4.0, 0.0), right_blue)));
+    world.add(Box::new(Quad::new(&Point3::new(-2.0, 3.0, 1.0), &Vec3::new(4.0, 0.0, 0.0), &Vec3::new(0.0, 0.0, 4.0), upper_orange)));
+    world.add(Box::new(Quad::new(&Point3::new(-2.0, -3.0, 5.0), &Vec3::new(4.0, 0.0, 0.0), &Vec3::new(0.0, 0.0, -4.0), lower_teal)));
+    
+    bar.set_message("Generating objects: Done.");
+    bar.finish();
+
+    //Render
+    let mut camera = Camera::default();
+    camera.aspect_ratio = 1.0;
+    camera.image_width = 400;
+    camera.samples_per_pixel = 100;
+    camera.max_depth = 50;
+    camera.vertical_view_angle = 80.0;
+    camera.look_from = Point3::new(0.0, 0.0, 9.0);
+    camera.look_at = Point3::default();
+    camera.view_up = Vec3::new(0.0, 1.0, 0.0);
+    camera.defocus_angle = 0.0;
+    camera.render(&mut world, &mut image)?;
+
+    Ok(())
+}
 
 fn main() -> Result<()> {
     let _ = create_dir_all("./output/")?;
 
-    match 4 {
+    match 5 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
-        _ => perlin_spheres(),
+        4 => perlin_spheres(),
+        _ => quads(),
     }
 }
