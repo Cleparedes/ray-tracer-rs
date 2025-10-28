@@ -14,6 +14,7 @@ pub struct Camera {
     pub image_width: i32,
     pub samples_per_pixel: i32,
     pub max_depth: i32,
+    pub background: Color,
     pub vertical_view_angle: f64,
     pub look_from: Point3,
     pub look_at: Point3,
@@ -131,20 +132,18 @@ impl Camera {
         if depth <= 0 {
             return Color::default()
         }
-
         let mut record  = HitRecord::default();
-        if world.hit(ray, &Interval::new(0.001, INFINITY), &mut record) {
-            let mut scattered = Ray::default();
-            let mut attenuation = Color::default();
-            if record.material.scatter(ray, &record, &mut attenuation, &mut scattered) {
-                return attenuation * self.ray_color(&scattered, depth - 1, world)
-            }
-            return Color::default()
+        if !world.hit(ray, &Interval::new(0.001, INFINITY), &mut record) {
+            return self.background
         }
-
-        let unit_direction: Vec3 = unit_vector(ray.direction());
-        let step: f64 = 0.5 * (unit_direction.y() + 1.0);
-        (1.0 - step) * Color::new(1.0, 1.0, 1.0) + step * Color::new(0.5, 0.7, 1.0)
+        let mut scattered = Ray::default();
+        let mut attenuation = Color::default();
+        let color_from_emission: Color = record.material.emmited(record.u, record.v, &record.point);
+        if !record.material.scatter(ray, &record, &mut attenuation, &mut scattered) {
+            return color_from_emission
+        }
+        let color_from_scatter: Color = attenuation * self.ray_color(&scattered, depth - 1, world);
+        color_from_emission + color_from_scatter
     }
 }
 
@@ -155,6 +154,7 @@ impl Default for Camera {
             image_width: 100,
             samples_per_pixel: 10,
             max_depth: 10,
+            background: Color::default(),
             vertical_view_angle: 90.0,
             look_from: Point3::default(),
             look_at: Point3::new(0.0, 0.0, -1.0),

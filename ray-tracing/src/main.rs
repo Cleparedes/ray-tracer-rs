@@ -24,7 +24,7 @@ use crate::camera::Camera;
 use crate::color::Color;
 use crate::hittable_list::HittableList;
 use crate::interval::Interval;
-use crate::material::{Dielectric, Lambertian, Metal};
+use crate::material::{Dielectric, DiffuseLight, Lambertian, Metal};
 use crate::quad::Quad;
 use crate::sphere::Sphere;
 use crate::texture::{CheckerTexture, ImageTexture, NoiseTexture};
@@ -106,6 +106,7 @@ fn bouncing_spheres() -> Result<()> {
     camera.image_width = 400;
     camera.samples_per_pixel = 100;
     camera.max_depth = 50;
+    camera.background = Color::new(0.7, 0.8, 1.0);
     camera.vertical_view_angle = 20.0;
     camera.look_from = Point3::new(13.0, 2.0, 3.0);
     camera.look_at = Point3::default();
@@ -144,6 +145,7 @@ fn checkered_spheres() -> Result<()> {
     camera.image_width = 400;
     camera.samples_per_pixel = 100;
     camera.max_depth = 50;
+    camera.background = Color::new(0.7, 0.8, 1.0);
     camera.vertical_view_angle = 20.0;
     camera.look_from = Point3::new(13.0, 2.0, 3.0);
     camera.look_at = Point3::default();
@@ -180,6 +182,7 @@ fn earth() -> Result<()> {
     camera.image_width = 400;
     camera.samples_per_pixel = 100;
     camera.max_depth = 50;
+    camera.background = Color::new(0.7, 0.8, 1.0);
     camera.vertical_view_angle = 20.0;
     camera.look_from = Point3::new(0.0, 0.0, 12.0);
     camera.look_at = Point3::default();
@@ -217,6 +220,7 @@ fn perlin_spheres() -> Result<()> {
     camera.image_width = 400;
     camera.samples_per_pixel = 100;
     camera.max_depth = 50;
+    camera.background = Color::new(0.7, 0.8, 1.0);
     camera.vertical_view_angle = 20.0;
     camera.look_from = Point3::new(13.0, 2.0, 3.0);
     camera.look_at = Point3::default();
@@ -263,6 +267,7 @@ fn quads() -> Result<()> {
     camera.image_width = 400;
     camera.samples_per_pixel = 100;
     camera.max_depth = 50;
+    camera.background = Color::new(0.7, 0.8, 1.0);
     camera.vertical_view_angle = 80.0;
     camera.look_from = Point3::new(0.0, 0.0, 9.0);
     camera.look_at = Point3::default();
@@ -273,14 +278,102 @@ fn quads() -> Result<()> {
     Ok(())
 }
 
+fn simple_light() -> Result<()> {
+    // Output
+    let mut image = File::create("./output/simple_light.ppm")?;
+
+    let bar = ProgressBar::new(3);
+    bar.set_message("Generating objects...");
+    bar.set_style(ProgressStyle::with_template("[{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
+        .unwrap()
+        .progress_chars("#>-"));
+
+    // World
+    let mut world = HittableList::default();
+
+    let pertext = NoiseTexture::new(4.0);
+    let pertext_material = Box::new(Lambertian::new_from_texture(Box::new(pertext)));
+    world.add(Box::new(Sphere::new(&Point3::new(0.0, -1000.0, 0.0), None, 1000.0, pertext_material.clone())));
+    world.add(Box::new(Sphere::new(&Point3::new(0.0, 2.0, 0.0), None, 2.0, pertext_material.clone())));
+
+    let difflight = Box::new(DiffuseLight::new(&Color::new(4.0, 4.0, 4.0)));
+    world.add(Box::new(Quad::new(&Point3::new(3.0, 1.0, -2.0), &Vec3::new(2.0, 0.0, 0.0), &Vec3::new(0.0, 2.0, 0.0), difflight.clone())));
+
+    bar.set_message("Generating objects: Done.");
+    bar.finish();
+
+    //Render
+    let mut camera = Camera::default();
+    camera.aspect_ratio = 16.0 / 9.0;
+    camera.image_width = 400;
+    camera.samples_per_pixel = 100;
+    camera.max_depth = 50;
+    camera.background = Color::default();
+    camera.vertical_view_angle = 20.0;
+    camera.look_from = Point3::new(26.0, 3.0, 6.0);
+    camera.look_at = Point3::new(0.0, 2.0, 0.0);
+    camera.view_up = Vec3::new(0.0, 1.0, 0.0);
+    camera.defocus_angle = 0.0;
+    camera.render(&mut world, &mut image)?;
+
+    Ok(())
+}
+
+fn cornell_box() -> Result<()> {
+    // Output
+    let mut image = File::create("./output/cornell_box.ppm")?;
+
+    let bar = ProgressBar::new(6);
+    bar.set_message("Generating objects...");
+    bar.set_style(ProgressStyle::with_template("[{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
+        .unwrap()
+        .progress_chars("#>-"));
+
+    // World
+    let mut world = HittableList::default();
+
+    let red = Box::new(Lambertian::new(&Color::new(0.65, 0.05, 0.05)));
+    let white = Box::new(Lambertian::new(&Color::new(0.73, 0.73, 0.73)));
+    let green = Box::new(Lambertian::new(&Color::new(0.12, 0.45, 0.15)));
+    let light = Box::new(DiffuseLight::new(&Color::new(15.0, 15.0, 15.0)));
+
+    world.add(Box::new(Quad::new(&Point3::new(555.0, 0.0, 0.0), &Vec3::new(0.0, 555.0, 0.0), &Vec3::new(0.0, 0.0, 555.0), green.clone())));
+    world.add(Box::new(Quad::new(&Point3::new(0.0, 0.0, 0.0), &Vec3::new(0.0, 555.0, 0.0), &Vec3::new(0.0, 0.0, 555.0), red.clone())));
+    world.add(Box::new(Quad::new(&Point3::new(343.0, 554.0, 332.0), &Vec3::new(-130.0, 0.0, 0.0), &Vec3::new(0.0, 0.0, -105.0), light.clone())));
+    world.add(Box::new(Quad::new(&Point3::new(0.0, 0.0, 0.0), &Vec3::new(555.0, 0.0, 0.0), &Vec3::new(0.0, 0.0, 555.0), white.clone())));
+    world.add(Box::new(Quad::new(&Point3::new(555.0, 555.0, 555.0), &Vec3::new(-555.0, 0.0, 0.0), &Vec3::new(0.0, 0.0, -555.0), white.clone())));
+    world.add(Box::new(Quad::new(&Point3::new(0.0, 0.0, 555.0), &Vec3::new(555.0, 0.0, 0.0), &Vec3::new(0.0, 555.0, 0.0), white.clone())));
+
+    bar.set_message("Generating objects: Done.");
+    bar.finish();
+
+    //Render
+    let mut camera = Camera::default();
+    camera.aspect_ratio = 1.0;
+    camera.image_width = 600;
+    camera.samples_per_pixel = 200;
+    camera.max_depth = 50;
+    camera.background = Color::default();
+    camera.vertical_view_angle = 40.0;
+    camera.look_from = Point3::new(278.0, 278.0, -800.0);
+    camera.look_at = Point3::new(278.0, 278.0, 0.0);
+    camera.view_up = Vec3::new(0.0, 1.0, 0.0);
+    camera.defocus_angle = 0.0;
+    camera.render(&mut world, &mut image)?;
+
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let _ = create_dir_all("./output/")?;
 
-    match 5 {
+    match 7 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
         4 => perlin_spheres(),
-        _ => quads(),
+        5 => quads(),
+        6 => simple_light(),
+        _ => cornell_box(),
     }
 }

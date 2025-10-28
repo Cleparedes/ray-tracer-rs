@@ -3,17 +3,32 @@ use crate::hittable::HitRecord;
 use crate::ray::Ray;
 use crate::texture::{SolidColor, Texture};
 use crate::utilities::random_double;
-use crate::vec3::{dot, random_unit_vector, reflect, refract, unit_vector, Vec3};
+use crate::vec3::{Point3, Vec3, dot, random_unit_vector, reflect, refract, unit_vector};
 
-pub trait Material {
+pub trait Material: MaterialClone {
+    fn scatter(&self, _ray_in: &Ray, _record: &HitRecord, _attenuation: &mut Color, _scattered: &mut Ray) -> bool {
+        false
+    }
+
+    fn emmited(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
+        Color::default()
+    }
+}
+
+pub trait MaterialClone {
     fn clone_box(&self) -> Box<dyn Material>;
-    fn scatter(&self, ray_in: &Ray, record: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) -> bool;
+}
+
+impl<T> MaterialClone for T where T: 'static + Material + Clone, {
+    fn clone_box(&self) -> Box<dyn Material> {
+        Box::new(self.clone())
+    }
 }
 
 impl Clone for Box<dyn Material> {
     fn clone(&self) -> Self {
         self.clone_box()
-    }    
+    }
 }
 
 #[derive(Clone)]
@@ -42,10 +57,6 @@ impl Default for Lambertian {
 }
 
 impl Material for Lambertian {
-    fn clone_box(&self) -> Box<dyn Material> {
-        Box::new(self.clone())
-    }
-
     fn scatter(&self, ray_in: &Ray, record: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) 
             -> bool {
         let mut scatter_direction: Vec3 = record.normal + random_unit_vector();
@@ -58,7 +69,7 @@ impl Material for Lambertian {
     }
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone)]
 pub struct Metal {
     albedo: Color,
     fuzz: f64,
@@ -74,10 +85,6 @@ impl Metal {
 }
 
 impl Material for Metal {
-    fn clone_box(&self) -> Box<dyn Material> {
-        Box::new(*self)
-    }
-
     fn scatter(&self, ray_in: &Ray, record: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) 
             -> bool {
         let mut reflected: Vec3 = reflect(ray_in.direction(), &record.normal);
@@ -88,7 +95,7 @@ impl Material for Metal {
     }
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone)]
 pub struct Dielectric {
     refraction_index: f64,
 }
@@ -109,10 +116,6 @@ impl Dielectric {
 }
 
 impl Material for Dielectric {
-    fn clone_box(&self) -> Box<dyn Material> {
-        Box::new(*self)
-    }
-
     fn scatter(&self, ray_in: &Ray, record: &HitRecord, attenuation: &mut Color, scattered: &mut Ray) 
             -> bool {
         *attenuation = Color::new(1.0, 1.0, 1.0);
@@ -130,5 +133,28 @@ impl Material for Dielectric {
             };
         *scattered = Ray::new(&record.point, &direction, Some(ray_in.time()));
         true
+    }
+}
+
+#[derive(Clone)]
+pub struct DiffuseLight {
+    texture: Box<dyn Texture>,
+}
+
+impl DiffuseLight {
+    pub fn new(albedo: &Color) -> Self {
+        Self::new_from_texture(Box::new(SolidColor::new_from_color(albedo)))
+    }
+
+    pub fn new_from_texture(texture: Box<dyn Texture>) -> Self {
+        Self {
+            texture
+        }
+    }
+}
+
+impl Material for DiffuseLight {
+    fn emmited(&self, u: f64, v: f64, p: &Point3) -> Color {
+        self.texture.value(u, v, p)
     }
 }

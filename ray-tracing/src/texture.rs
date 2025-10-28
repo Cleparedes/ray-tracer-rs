@@ -4,19 +4,27 @@ use crate::perlin::Perlin;
 use crate::rtw_image::RTWImage;
 use crate::vec3::Point3;
 
-pub trait Texture {
-    fn clone_box(&self) -> Box<dyn Texture>;
+pub trait Texture: TextureClone {
     fn value(&self, u: f64, v: f64, p: &Point3) -> Color;
 }
 
-impl Clone for Box<dyn Texture> {
+pub trait TextureClone {
+    fn clone_box(&self) -> Box<dyn Texture>;
+}
 
+impl<T> TextureClone for T where T: 'static + Texture + Clone, {
+    fn clone_box(&self) -> Box<dyn Texture> {
+        Box::new(self.clone())
+    }
+}
+
+impl Clone for Box<dyn Texture> {
     fn clone(&self) -> Self {
         self.clone_box()
     }    
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Default)]
 pub struct SolidColor {
     pub albedo: Color,
 }
@@ -34,10 +42,6 @@ impl SolidColor {
 }
 
 impl Texture for SolidColor {
-    fn clone_box(&self) -> Box<dyn Texture> {
-        Box::new(self.clone())
-    }
-
     fn value(&self, _u: f64, _v: f64, _p: &Point3) -> Color {
         self.albedo
     }
@@ -69,10 +73,6 @@ impl CheckerTexture {
 }
 
 impl Texture for CheckerTexture {
-    fn clone_box(&self) -> Box<dyn Texture> {
-        Box::new(self.clone())
-    }
-
     fn value(&self, u: f64, v: f64, p: &Point3) -> Color {
         let x_floor = (self.inv_scale * p.x()).floor() as i32;
         let y_floor = (self.inv_scale * p.y()).floor() as i32;
@@ -99,10 +99,6 @@ impl ImageTexture {
 }
 
 impl Texture for ImageTexture {
-    fn clone_box(&self) -> Box<dyn Texture> {
-        Box::new(self.clone())
-    }
-
     fn value(&self, u: f64, v: f64, _p: &Point3) -> Color {
         if self.image.height() <= 0 {
             return Color::new(1.0, 0.0, 1.0)
@@ -137,10 +133,6 @@ impl NoiseTexture {
 }
 
 impl Texture for NoiseTexture {
-    fn clone_box(&self) -> Box<dyn Texture> {
-        Box::new(self.clone())
-    }
-
     fn value(&self, _u: f64, _v: f64, p: &Point3) -> Color {
         Color::new(0.5, 0.5, 0.5) 
             * (1.0 + (self.scale * p.z() + 10.0 * self.noise.turb(p, 7)).sin())
