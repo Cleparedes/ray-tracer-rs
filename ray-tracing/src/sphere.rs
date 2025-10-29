@@ -76,8 +76,4 @@ impl Hittable for Sphere {
     fn bounding_box(&self) -> AABB {
         self.bbox
     }
-
-    fn box_clone(&self) -> Box<dyn Hittable> {
-        Box::new(self.clone())
-    }
 }

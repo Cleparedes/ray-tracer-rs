@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter, Result};
+use std::ops::Add;
 
 use crate::interval;
 use crate::interval::Interval;
@@ -111,6 +112,26 @@ impl AABB {
 impl Display for AABB {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write!(f, "x: {}, y: {}, z:{}", self.x, self.y, self.z)
+    }
+}
+
+impl Add<Vec3> for AABB {
+    type Output = AABB;
+
+    fn add(self, offset: Vec3) -> Self::Output {
+        AABB::new(
+            &(self.x + offset.x()), 
+            &(self.y + offset.y()), 
+            &(self.z + offset.z()),
+        )
+    }
+}
+
+impl Add<AABB> for Vec3 {
+    type Output = AABB;
+
+    fn add(self, bbox: AABB) -> Self::Output {
+        bbox + self
     }
 }
 

@@ -22,10 +22,11 @@ use std::io::Result;
 use crate::bvh::BVHNode;
 use crate::camera::Camera;
 use crate::color::Color;
+use crate::hittable::{Hittable, RotateY, Translate};
 use crate::hittable_list::HittableList;
 use crate::interval::Interval;
 use crate::material::{Dielectric, DiffuseLight, Lambertian, Metal};
-use crate::quad::Quad;
+use crate::quad::{Quad, make_box};
 use crate::sphere::Sphere;
 use crate::texture::{CheckerTexture, ImageTexture, NoiseTexture};
 use crate::utilities::random_double;
@@ -323,7 +324,7 @@ fn cornell_box() -> Result<()> {
     // Output
     let mut image = File::create("./output/cornell_box.ppm")?;
 
-    let bar = ProgressBar::new(6);
+    let bar = ProgressBar::new(8);
     bar.set_message("Generating objects...");
     bar.set_style(ProgressStyle::with_template("[{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
         .unwrap()
@@ -343,6 +344,16 @@ fn cornell_box() -> Result<()> {
     world.add(Box::new(Quad::new(&Point3::new(0.0, 0.0, 0.0), &Vec3::new(555.0, 0.0, 0.0), &Vec3::new(0.0, 0.0, 555.0), white.clone())));
     world.add(Box::new(Quad::new(&Point3::new(555.0, 555.0, 555.0), &Vec3::new(-555.0, 0.0, 0.0), &Vec3::new(0.0, 0.0, -555.0), white.clone())));
     world.add(Box::new(Quad::new(&Point3::new(0.0, 0.0, 555.0), &Vec3::new(555.0, 0.0, 0.0), &Vec3::new(0.0, 555.0, 0.0), white.clone())));
+
+    let mut box1: Box<dyn Hittable> = make_box(&Point3::new(0.0, 0.0, 0.0), &Point3::new(165.0, 330.0, 165.0), white.clone());
+    box1 = Box::new(RotateY::new(box1, 15.0));
+    box1 = Box::new(Translate::new(box1, &Vec3::new(265.0, 0.0, 295.0)));
+    world.add(box1);
+
+    let mut box2: Box<dyn Hittable> = make_box(&Point3::new(0.0, 0.0, 0.0), &Point3::new(165.0, 165.0, 165.0), white.clone());
+    box2 = Box::new(RotateY::new(box2, -18.0));
+    box2 = Box::new(Translate::new(box2, &Vec3::new(130.0, 0.0, 65.0)));
+    world.add(box2);
 
     bar.set_message("Generating objects: Done.");
     bar.finish();

@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter, Result};
+use std::ops::Add;
 
 use crate::utilities::INFINITY;
 
@@ -60,6 +61,22 @@ impl Default for Interval {
 impl Display for Interval {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write!(f, "[{}, {}]", self.min, self.max)
+    }
+}
+
+impl Add<f64> for Interval {
+    type Output = Interval;
+
+    fn add(self, displacement: f64) -> Self::Output {
+        Interval::new(self.min + displacement, self.max + displacement)
+    }
+}
+
+impl Add<Interval> for f64 {
+    type Output = Interval;
+
+    fn add(self, interval: Interval) -> Self::Output {
+        interval + self
     }
 }
 
