@@ -2,6 +2,7 @@ pub mod aabb;
 pub mod bvh;
 pub mod camera;
 pub mod color;
+pub mod constant_medium;
 pub mod hittable;
 pub mod hittable_list;
 pub mod interval;
@@ -22,6 +23,7 @@ use std::io::Result;
 use crate::bvh::BVHNode;
 use crate::camera::Camera;
 use crate::color::Color;
+use crate::constant_medium::ConstantMedium;
 use crate::hittable::{Hittable, RotateY, Translate};
 use crate::hittable_list::HittableList;
 use crate::interval::Interval;
@@ -339,18 +341,18 @@ fn cornell_box() -> Result<()> {
     let light = Box::new(DiffuseLight::new(&Color::new(15.0, 15.0, 15.0)));
 
     world.add(Box::new(Quad::new(&Point3::new(555.0, 0.0, 0.0), &Vec3::new(0.0, 555.0, 0.0), &Vec3::new(0.0, 0.0, 555.0), green.clone())));
-    world.add(Box::new(Quad::new(&Point3::new(0.0, 0.0, 0.0), &Vec3::new(0.0, 555.0, 0.0), &Vec3::new(0.0, 0.0, 555.0), red.clone())));
+    world.add(Box::new(Quad::new(&Point3::default(), &Vec3::new(0.0, 555.0, 0.0), &Vec3::new(0.0, 0.0, 555.0), red.clone())));
     world.add(Box::new(Quad::new(&Point3::new(343.0, 554.0, 332.0), &Vec3::new(-130.0, 0.0, 0.0), &Vec3::new(0.0, 0.0, -105.0), light.clone())));
-    world.add(Box::new(Quad::new(&Point3::new(0.0, 0.0, 0.0), &Vec3::new(555.0, 0.0, 0.0), &Vec3::new(0.0, 0.0, 555.0), white.clone())));
+    world.add(Box::new(Quad::new(&Point3::default(), &Vec3::new(555.0, 0.0, 0.0), &Vec3::new(0.0, 0.0, 555.0), white.clone())));
     world.add(Box::new(Quad::new(&Point3::new(555.0, 555.0, 555.0), &Vec3::new(-555.0, 0.0, 0.0), &Vec3::new(0.0, 0.0, -555.0), white.clone())));
     world.add(Box::new(Quad::new(&Point3::new(0.0, 0.0, 555.0), &Vec3::new(555.0, 0.0, 0.0), &Vec3::new(0.0, 555.0, 0.0), white.clone())));
 
-    let mut box1: Box<dyn Hittable> = make_box(&Point3::new(0.0, 0.0, 0.0), &Point3::new(165.0, 330.0, 165.0), white.clone());
+    let mut box1: Box<dyn Hittable> = make_box(&Point3::default(), &Point3::new(165.0, 330.0, 165.0), white.clone());
     box1 = Box::new(RotateY::new(box1, 15.0));
     box1 = Box::new(Translate::new(box1, &Vec3::new(265.0, 0.0, 295.0)));
     world.add(box1);
 
-    let mut box2: Box<dyn Hittable> = make_box(&Point3::new(0.0, 0.0, 0.0), &Point3::new(165.0, 165.0, 165.0), white.clone());
+    let mut box2: Box<dyn Hittable> = make_box(&Point3::default(), &Point3::new(165.0, 165.0, 165.0), white.clone());
     box2 = Box::new(RotateY::new(box2, -18.0));
     box2 = Box::new(Translate::new(box2, &Vec3::new(130.0, 0.0, 65.0)));
     world.add(box2);
@@ -375,16 +377,72 @@ fn cornell_box() -> Result<()> {
     Ok(())
 }
 
+fn cornell_smoke() -> Result<()> {
+    // Output
+    let mut image = File::create("./output/cornell_smoke.ppm")?;
+
+    let bar = ProgressBar::new(8);
+    bar.set_message("Generating objects...");
+    bar.set_style(ProgressStyle::with_template("[{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
+        .unwrap()
+        .progress_chars("#>-"));
+
+    // World
+    let mut world = HittableList::default();
+
+    let red = Box::new(Lambertian::new(&Color::new(0.65, 0.05, 0.05)));
+    let white = Box::new(Lambertian::new(&Color::new(0.73, 0.73, 0.73)));
+    let green = Box::new(Lambertian::new(&Color::new(0.12, 0.45, 0.15)));
+    let light = Box::new(DiffuseLight::new(&Color::new(7.0, 7.0, 7.0)));
+
+    world.add(Box::new(Quad::new(&Point3::new(555.0, 0.0, 0.0), &Vec3::new(0.0, 555.0, 0.0), &Vec3::new(0.0, 0.0, 555.0), green.clone())));
+    world.add(Box::new(Quad::new(&Point3::default(), &Vec3::new(0.0, 555.0, 0.0), &Vec3::new(0.0, 0.0, 555.0), red.clone())));
+    world.add(Box::new(Quad::new(&Point3::new(113.0, 554.0, 127.0), &Vec3::new(330.0, 0.0, 0.0), &Vec3::new(0.0, 0.0, 305.0), light.clone())));
+    world.add(Box::new(Quad::new(&Point3::new(0.0, 555.0, 0.0), &Vec3::new(555.0, 0.0, 0.0), &Vec3::new(0.0, 0.0, 555.0), white.clone())));
+    world.add(Box::new(Quad::new(&Point3::default(), &Vec3::new(555.0, 0.0, 0.0), &Vec3::new(0.0, 0.0, 555.0), white.clone())));
+    world.add(Box::new(Quad::new(&Point3::new(0.0, 0.0, 555.0), &Vec3::new(555.0, 0.0, 0.0), &Vec3::new(0.0, 555.0, 0.0), white.clone())));
+
+    let mut box1: Box<dyn Hittable> = make_box(&Point3::default(), &Point3::new(165.0, 330.0, 165.0), white.clone());
+    box1 = Box::new(RotateY::new(box1, 15.0));
+    box1 = Box::new(Translate::new(box1, &Vec3::new(265.0, 0.0, 295.0)));
+    world.add(Box::new(ConstantMedium::new(box1, 0.01, &Color::default())));
+
+    let mut box2: Box<dyn Hittable> = make_box(&Point3::default(), &Point3::new(165.0, 165.0, 165.0), white.clone());
+    box2 = Box::new(RotateY::new(box2, -18.0));
+    box2 = Box::new(Translate::new(box2, &Vec3::new(130.0, 0.0, 65.0)));
+    world.add(Box::new(ConstantMedium::new(box2, 0.01, &Color::new(1.0, 1.0, 1.0))));
+
+    bar.set_message("Generating objects: Done.");
+    bar.finish();
+
+    //Render
+    let mut camera = Camera::default();
+    camera.aspect_ratio = 1.0;
+    camera.image_width = 600;
+    camera.samples_per_pixel = 200;
+    camera.max_depth = 50;
+    camera.background = Color::default();
+    camera.vertical_view_angle = 40.0;
+    camera.look_from = Point3::new(278.0, 278.0, -800.0);
+    camera.look_at = Point3::new(278.0, 278.0, 0.0);
+    camera.view_up = Vec3::new(0.0, 1.0, 0.0);
+    camera.defocus_angle = 0.0;
+    camera.render(&mut world, &mut image)?;
+
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let _ = create_dir_all("./output/")?;
 
-    match 7 {
+    match 8 {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
         4 => perlin_spheres(),
         5 => quads(),
         6 => simple_light(),
-        _ => cornell_box(),
+        7 => cornell_box(),
+        _ => cornell_smoke(),
     }
 }

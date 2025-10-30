@@ -1,8 +1,9 @@
 use crate::aabb::AABB;
+use crate::color::Color;
 use crate::hittable::{HitRecord, Hittable};
 use crate::hittable_list::HittableList;
 use crate::interval::Interval;
-use crate::material::Material;
+use crate::material::{Lambertian, Material};
 use crate::ray::Ray;
 use crate::vec3::{cross, dot, unit_vector, Point3, Vec3};
 
@@ -95,7 +96,8 @@ pub fn make_box(a: &Point3, b: &Point3, material: Box<dyn Material>) -> Box<Hitt
     let dx = Vec3::new(max.x() - min.x(), 0.0, 0.0);
     let dy = Vec3::new(0.0, max.y() - min.y(), 0.0);
     let dz = Vec3::new(0.0, 0.0, max.z() - min.z());
-    sides.add(Box::new(Quad::new(&Point3::new(min.x(), min.y(), max.z()), &dx, &dy, material.clone())));
+    let red = Box::new(Lambertian::new(&Color ::new(0.65, 0.05, 0.05)));
+    sides.add(Box::new(Quad::new(&Point3::new(min.x(), min.y(), max.z()), &dx, &dy, red.clone())));
     sides.add(Box::new(Quad::new(&Point3::new(max.x(), min.y(), max.z()), &-dy, &dy, material.clone())));
     sides.add(Box::new(Quad::new(&Point3::new(max.x(), min.y(), min.z()), &-dx, &dy, material.clone())));
     sides.add(Box::new(Quad::new(&Point3::new(min.x(), min.y(), min.z()), &dz, &dy, material.clone())));
